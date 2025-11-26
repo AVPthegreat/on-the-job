@@ -1,238 +1,279 @@
-/*
-import { Storage } from './storage.js';
+// State
+let tasks = [
+    { id: 't1', title: 'Design System', column: 'todo', priority: 'high', dueDate: new Date(Date.now() + 86400000).toISOString() },
+    { id: 't2', title: 'API Integration', column: 'doing', priority: 'medium', dueDate: new Date(Date.now() + 172800000).toISOString() },
+    { id: 't3', title: 'User Testing', column: 'done', priority: 'low', dueDate: new Date(Date.now() - 86400000).toISOString() }
+];
 
 // DOM Elements
-const columns = document.querySelectorAll('.task-list');
-const addBtns = document.querySelectorAll('.add-task-btn');
-const modalOverlay = document.getElementById('task-modal');
-const closeModalBtn = document.getElementById('close-modal');
-const cancelBtn = document.getElementById('cancel-btn');
-const taskForm = document.getElementById('task-form');
-const themeToggle = document.getElementById('theme-toggle');
+const txt = document.getElementById('txt');
+const addBtn = document.getElementById('add');
+const colBtn = document.getElementById('col-btn');
+const colText = document.getElementById('col-text');
+const priorityBtn = document.getElementById('priority-btn');
+const priorityText = document.getElementById('priority-text');
+const dateInput = document.getElementById('date-input');
 
-// State
-let currentDragItem = null;
+// Constants
+const columns = ['todo', 'doing', 'done'];
+const columnLabels = {'todo': 'To Do', 'doing': 'Doing', 'done': 'Done'};
+const priorities = ['low', 'medium', 'high'];
+const priorityLabels = {'low': 'Priority: Low', 'medium': 'Priority: Medium', 'high': 'Priority: High'};
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    loadTasks();
-    setupTheme();
-    setupEventListeners();
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+    dateInput.value = tomorrow.toISOString().slice(0, 16);
+
+    renderTasks();
+    renderTimeline();
 });
 
-function setupEventListeners() {
-    // Theme Toggle
-    themeToggle.addEventListener('click', toggleTheme);
+// --- Event Listeners ---
 
-    // Modal Controls
-    addBtns.forEach(btn => {
-        btn.addEventListener('click', () => openModal(null, btn.dataset.column));
-    });
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
+// Column Selector
+colBtn.onclick = () => {
+    const currentVal = colBtn.dataset.value;
+    const nextIndex = (columns.indexOf(currentVal) + 1) % columns.length;
+    const newVal = columns[nextIndex];
+    colBtn.dataset.value = newVal;
+    colText.textContent = columnLabels[newVal];
+};
 
-    // Form Submit
-    taskForm.addEventListener('submit', handleFormSubmit);
+// Priority Selector
+priorityBtn.onclick = () => {
+    const currentVal = priorityBtn.dataset.value;
+    const nextIndex = (priorities.indexOf(currentVal) + 1) % priorities.length;
+    const newVal = priorities[nextIndex];
+    priorityBtn.dataset.value = newVal;
+    priorityText.textContent = priorityLabels[newVal];
+};
 
-    // Drag and Drop Events for Columns
-    columns.forEach(column => {
-        column.addEventListener('dragover', handleDragOver);
-        column.addEventListener('dragleave', handleDragLeave);
-        column.addEventListener('drop', handleDrop);
-    });
-}
+// Add Task (Click)
+addBtn.onclick = addTask;
 
-// --- Theme Handling ---
-function setupTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-}
+// Add Task (Enter)
+txt.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addTask();
+});
 
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-}
+// --- Core Logic ---
 
-// --- Task Management ---
-function loadTasks() {
-    const tasks = Storage.getTasks();
-    
-    // Clear existing
-    document.getElementById('todo-list').innerHTML = '';
-    document.getElementById('progress-list').innerHTML = '';
-    document.getElementById('done-list').innerHTML = '';
+function addTask() {
+    const title = txt.value.trim();
+    if (!title) return;
 
-    tasks.forEach(task => renderTask(task));
-    updateCounts();
-}
+    const newTask = {
+        id: 'c_' + Math.random().toString(36).slice(2, 9),
+        title: title,
+        column: colBtn.dataset.value,
+        priority: priorityBtn.dataset.value,
+        dueDate: dateInput.value || new Date().toISOString()
+    };
 
-function renderTask(task) {
-    const card = document.createElement('div');
-    card.className = 'task-card';
-    card.draggable = true;
-    card.id = task.id;
-    card.dataset.status = task.status;
-    
-    card.innerHTML = `
-        <div class="task-content">${escapeHtml(task.content)}</div>
-        <div class="task-meta">
-            <button class="task-action-btn btn-edit" aria-label="Edit">✎</button>
-            <button class="task-action-btn btn-delete" aria-label="Delete">🗑</button>
-        </div>
-    `;
-
-    // Drag Events
-    card.addEventListener('dragstart', handleDragStart);
-    card.addEventListener('dragend', handleDragEnd);
-
-    // Button Events
-    const editBtn = card.querySelector('.btn-edit');
-    const deleteBtn = card.querySelector('.btn-delete');
-
-    editBtn.addEventListener('click', () => openModal(task));
-    deleteBtn.addEventListener('click', () => deleteTask(task.id));
-
-    // Append to correct column
-    const columnId = getColumnIdFromStatus(task.status);
-    document.getElementById(columnId).appendChild(card);
-}
-
-function getColumnIdFromStatus(status) {
-    switch(status) {
-        case 'todo': return 'todo-list';
-        case 'in-progress': return 'progress-list';
-        case 'done': return 'done-list';
-        default: return 'todo-list';
-    }
-}
-
-function updateCounts() {
-    document.getElementById('todo-count').innerText = document.getElementById('todo-list').children.length;
-    document.getElementById('progress-count').innerText = document.getElementById('progress-list').children.length;
-    document.getElementById('done-count').innerText = document.getElementById('done-list').children.length;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// --- Modal & Form ---
-function openModal(task = null, status = 'todo') {
-    const modalTitle = document.getElementById('modal-title');
-    const contentInput = document.getElementById('task-content');
-    const idInput = document.getElementById('task-id');
-    const statusInput = document.getElementById('task-status');
-
-    if (task) {
-        modalTitle.textContent = 'Edit Task';
-        contentInput.value = task.content;
-        idInput.value = task.id;
-        statusInput.value = task.status;
-    } else {
-        modalTitle.textContent = 'New Task';
-        contentInput.value = '';
-        idInput.value = '';
-        statusInput.value = status;
-    }
-
-    modalOverlay.classList.add('active');
-    modalOverlay.setAttribute('aria-hidden', 'false');
-    // Small delay to ensure transition starts/element is visible before focus
-    setTimeout(() => {
-        contentInput.focus();
-    }, 50);
-}
-
-function closeModal() {
-    modalOverlay.classList.remove('active');
-    modalOverlay.setAttribute('aria-hidden', 'true');
-}
-
-function handleFormSubmit(e) {
-    e.preventDefault();
-    const content = document.getElementById('task-content').value;
-    const id = document.getElementById('task-id').value;
-    const status = document.getElementById('task-status').value;
-
-    if (id) {
-        // Update
-        const updatedTask = { id, content, status };
-        Storage.updateTask(updatedTask);
-        // Re-render all to be safe and simple
-        loadTasks();
-    } else {
-        // Create
-        const newTask = {
-            id: Date.now().toString(),
-            content,
-            status
-        };
-        Storage.addTask(newTask);
-        renderTask(newTask);
-        updateCounts();
-    }
-
-    closeModal();
+    tasks.push(newTask);
+    renderTasks();
+    renderTimeline();
+    txt.value = '';
 }
 
 function deleteTask(id) {
-    if(confirm('Are you sure you want to delete this task?')) {
-        Storage.deleteTask(id);
-        const card = document.getElementById(id);
-        if (card) {
-            card.remove();
-            updateCounts();
+    tasks = tasks.filter(t => t.id !== id);
+    renderTasks();
+    renderTimeline();
+}
+
+function renderTasks() {
+    // Clear columns
+    document.getElementById('todo').innerHTML = '';
+    document.getElementById('doing').innerHTML = '';
+    document.getElementById('done').innerHTML = '';
+
+    tasks.forEach(task => {
+        const card = createCardElement(task);
+        const container = document.getElementById(task.column);
+        if (container) container.appendChild(card);
+    });
+}
+
+function createCardElement(task) {
+    const el = document.createElement('div');
+    el.className = `dashboard-task-card priority-${task.priority}`;
+    el.draggable = true;
+    el.id = task.id;
+    
+    // Drag Events
+    el.ondragstart = ev => {
+        ev.dataTransfer.setData('text/plain', task.id);
+        ev.dataTransfer.effectAllowed = 'move';
+    };
+
+    // Content
+    const content = document.createElement('div');
+    content.style.display = 'flex';
+    content.style.justifyContent = 'space-between';
+    content.style.alignItems = 'center';
+
+    const text = document.createElement('span');
+    text.textContent = task.title;
+    text.style.color = '#fff';
+    text.style.fontWeight = '500';
+
+    const meta = document.createElement('div');
+    meta.style.display = 'flex';
+    meta.style.alignItems = 'center';
+    meta.style.gap = '8px';
+
+    // Due Date Badge
+    const date = new Date(task.dueDate);
+    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const dateBadge = document.createElement('span');
+    dateBadge.textContent = dateStr;
+    dateBadge.style.fontSize = '0.7rem';
+    dateBadge.style.color = '#888';
+    dateBadge.style.backgroundColor = '#222';
+    dateBadge.style.padding = '2px 6px';
+    dateBadge.style.borderRadius = '4px';
+
+    const delBtn = document.createElement('button');
+    delBtn.innerHTML = '&times;';
+    delBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteTask(task.id);
+    };
+    delBtn.style.background = 'none';
+    delBtn.style.border = 'none';
+    delBtn.style.color = '#666';
+    delBtn.style.fontSize = '1.2rem';
+    delBtn.style.cursor = 'pointer';
+    delBtn.onmouseover = () => delBtn.style.color = '#ef4444';
+    delBtn.onmouseout = () => delBtn.style.color = '#666';
+
+    meta.appendChild(dateBadge);
+    meta.appendChild(delBtn);
+
+    content.appendChild(text);
+    content.appendChild(meta);
+    el.appendChild(content);
+
+    return el;
+}
+
+// --- Drag & Drop Global Handlers ---
+window.drop = function(ev) {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData('text/plain');
+    const task = tasks.find(t => t.id === id);
+    
+    // Identify target column
+    let target = ev.target;
+    while (target && !target.classList.contains('task-container')) {
+        target = target.parentElement;
+    }
+
+    if (task && target) {
+        task.column = target.id;
+        renderTasks();
+        renderTimeline(); // Update timeline colors if status changed
+    }
+};
+
+// --- Timeline Logic ---
+
+function renderTimeline() {
+    const chart = document.getElementById('timeline-chart');
+    const xAxis = document.getElementById('timeline-x-axis');
+    if (!chart || !xAxis) return;
+
+    chart.innerHTML = '';
+    xAxis.innerHTML = '';
+
+    // 1. Setup Y-Axis (Next 7 Days)
+    const today = new Date();
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        dates.push(d);
+    }
+
+    const yAxis = document.createElement('div');
+    yAxis.className = 'y-axis';
+    dates.forEach(d => {
+        const span = document.createElement('span');
+        span.textContent = d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' });
+        yAxis.appendChild(span);
+    });
+    chart.appendChild(yAxis);
+
+    // 2. Setup Grid & Capsules
+    const grid = document.createElement('div');
+    grid.className = 'timeline-grid';
+    
+    // Grid Lines
+    dates.forEach(() => {
+        const line = document.createElement('div');
+        line.className = 'grid-line';
+        grid.appendChild(line);
+    });
+
+    // Plot Tasks
+    tasks.forEach(task => {
+        if (task.column === 'done') return; // Optional: Hide done tasks from timeline
+
+        const dueDate = new Date(task.dueDate);
+        
+        // Find which row (date) this task belongs to
+        const rowIndex = dates.findIndex(d => 
+            d.getDate() === dueDate.getDate() && 
+            d.getMonth() === dueDate.getMonth()
+        );
+
+        if (rowIndex !== -1) {
+            // Calculate X position based on time (0-24h)
+            const hours = dueDate.getHours() + (dueDate.getMinutes() / 60);
+            const leftPercent = (hours / 24) * 100;
+            
+            // Calculate Top position based on row index
+            // Assuming 7 rows, each is ~14.28% height
+            const rowHeight = 100 / 7;
+            const topPercent = (rowIndex * rowHeight) + (rowHeight / 2) - 2; // Center in row
+
+            const capsule = document.createElement('div');
+            capsule.className = `capsule ${getTaskColor(task)}`;
+            capsule.style.left = `${leftPercent}%`;
+            capsule.style.top = `${topPercent}%`;
+            capsule.style.width = '200px'; // Fixed width for readability
+
+            // Remaining Time Calculation
+            const diffMs = dueDate - new Date();
+            const diffHrs = Math.round(diffMs / (1000 * 60 * 60));
+            const timeText = diffHrs > 0 ? `${diffHrs}h left` : 'Overdue';
+
+            capsule.innerHTML = `
+                <span style="margin-right:4px">${task.title}</span>
+                <span style="font-size:0.7em; opacity:0.8">${timeText}</span>
+            `;
+
+            grid.appendChild(capsule);
         }
-    }
+    });
+
+    chart.appendChild(grid);
+
+    // 3. Setup X-Axis (Time)
+    ['00:00', '06:00', '12:00', '18:00', '23:59'].forEach(time => {
+        const span = document.createElement('span');
+        span.textContent = time;
+        xAxis.appendChild(span);
+    });
 }
 
-// --- Drag and Drop Logic ---
-function handleDragStart(e) {
-    currentDragItem = this;
-    this.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', this.id);
+function getTaskColor(task) {
+    if (task.column === 'todo') return 'orange';
+    if (task.column === 'doing') return 'green';
+    return 'white';
 }
-
-function handleDragEnd(e) {
-    this.classList.remove('dragging');
-    columns.forEach(col => col.classList.remove('drag-over'));
-    currentDragItem = null;
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    this.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    this.classList.remove('drag-over');
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    this.classList.remove('drag-over');
-    
-    const taskId = e.dataTransfer.getData('text/plain');
-    const card = document.getElementById(taskId);
-    
-    // Determine new status based on column parent ID
-    // The listener is on .task-list, its parent is .column which has data-status
-    const newStatus = this.parentElement.dataset.status;
-
-    if (card && newStatus) {
-        this.appendChild(card);
-        Storage.updateTaskStatus(taskId, newStatus);
-        card.dataset.status = newStatus;
-        updateCounts();
-    }
-}
-*/
