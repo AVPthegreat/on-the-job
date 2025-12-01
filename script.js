@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
     dateInput.value = tomorrow.toISOString().slice(0, 16);
 
+    loadTasks(); // Load from LocalStorage
     renderTasks();
     renderTimeline();
 });
@@ -60,6 +61,19 @@ txt.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addTask();
 });
 
+// --- Persistence ---
+
+function saveTasks() {
+    localStorage.setItem('kanban_tasks', JSON.stringify(tasks));
+}
+
+function loadTasks() {
+    const stored = localStorage.getItem('kanban_tasks');
+    if (stored) {
+        tasks = JSON.parse(stored);
+    }
+}
+
 // --- Core Logic ---
 
 function addTask() {
@@ -75,6 +89,7 @@ function addTask() {
     };
 
     tasks.push(newTask);
+    saveTasks(); // Save
     renderTasks();
     renderTimeline();
     txt.value = '';
@@ -82,6 +97,7 @@ function addTask() {
 
 function deleteTask(id) {
     tasks = tasks.filter(t => t.id !== id);
+    saveTasks(); // Save
     renderTasks();
     renderTimeline();
 }
@@ -97,6 +113,19 @@ function renderTasks() {
         const container = document.getElementById(task.column);
         if (container) container.appendChild(card);
     });
+}
+
+function editTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    
+    const newTitle = prompt('Edit task title:', task.title);
+    if (!newTitle) return;
+    
+    task.title = newTitle.trim();
+    saveTasks(); // Save changes
+    renderTasks();
+    renderTimeline();
 }
 
 function createCardElement(task) {
@@ -138,6 +167,22 @@ function createCardElement(task) {
     dateBadge.style.padding = '2px 6px';
     dateBadge.style.borderRadius = '4px';
 
+    // Edit Button
+    const editBtn = document.createElement('button');
+    editBtn.innerHTML = '✎';
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        editTask(task.id);
+    };
+    editBtn.style.background = 'none';
+    editBtn.style.border = 'none';
+    editBtn.style.color = '#666';
+    editBtn.style.fontSize = '1.2rem';
+    editBtn.style.cursor = 'pointer';
+    editBtn.onmouseover = () => editBtn.style.color = '#fff';
+    editBtn.onmouseout = () => editBtn.style.color = '#666';
+
+    // Delete Button
     const delBtn = document.createElement('button');
     delBtn.innerHTML = '&times;';
     delBtn.onclick = (e) => {
@@ -153,6 +198,7 @@ function createCardElement(task) {
     delBtn.onmouseout = () => delBtn.style.color = '#666';
 
     meta.appendChild(dateBadge);
+    meta.appendChild(editBtn);
     meta.appendChild(delBtn);
 
     content.appendChild(text);
@@ -176,6 +222,7 @@ window.drop = function(ev) {
 
     if (task && target) {
         task.column = target.id;
+        saveTasks(); // Save
         renderTasks();
         renderTimeline(); // Update timeline colors if status changed
     }
