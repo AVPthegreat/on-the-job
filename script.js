@@ -396,7 +396,8 @@ function drawTimeline() {
 }
 
 function getTaskColor(task) {
-  if (task.column === "todo") return "orange";
-  if (task.column === "doing") return "green";
+  if (task.priority === "low") return "green";
+  if (task.priority === "medium") return "orange";
+  if (task.priority === "high") return "red";
   return "white";
 }
