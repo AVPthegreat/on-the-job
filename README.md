@@ -132,3 +132,35 @@ Contains all JavaScript logic, organized into clear sections:
 
 ## 📁 Project Structure
 
+
+---
+
+## 🧩 Usage Instructions
+
+Follow these steps to operate the dashboard:
+
+1. Open `index.html` in a browser.
+2. Enter a task name in the input field at the top.
+3. Select the appropriate task stage using the column toggle button.
+4. Click the Add button to insert the task.
+5. Drag and drop tasks across columns to update progress visually.
+6. Use icons on each task card to edit or delete them.
+
+### Additional User Actions
+- **Move Task:** Drag and drop within or across columns.
+- **Edit Task:** Click the pencil icon to modify the text.
+- **Delete Task:** Remove tasks using the trash icon.
+- **Toggle Theme:** Use the sun/moon icon for light/dark mode.
+
+---
+
+## 🛠️ Technologies Used
+
+- **HTML5** — Semantic structure and component layout  
+- **CSS3** — Grid, Flexbox, transitions, theme variables  
+- **JavaScript ES6** — Functional logic and UI interaction handling  
+- **Drag and Drop API** — Native movement of task elements  
+- **LocalStorage API** — (Optional) Extendable for persistent storage  
+
+---
+
