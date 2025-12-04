@@ -332,8 +332,8 @@ body {
 
 .dashboard-task-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-    border-color: var(--accent-green);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+    border-color: #a855f7;
 }
 
 .dashboard-task-card:active {
