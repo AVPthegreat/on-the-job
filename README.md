@@ -1,62 +1,134 @@
-🚀 Kanban Dashboard
-The Kanban Dashboard is a professionally designed task-management interface built with modern web technologies. It delivers a clean, premium dark-mode experience and includes a fully responsive layout, intuitive interactions, and structured task flow management. This project is ideal for demonstrating UI/UX capabilities, JavaScript functionality, and dashboard-style application design.
+# 🚀 Kanban Dashboard
 
+The **Kanban Dashboard** is a professionally developed task-management interface featuring a premium dark-mode design, structured workflow management, and intuitive drag-and-drop interactions. Built with core web technologies, this dashboard demonstrates strong UI/UX principles, modular code structure, and real-world dashboard layout design. It can serve as a standalone project or the foundation for a full project-management tool.
 
-📘 Overview
-This project provides a comprehensive Kanban-style task dashboard that enables users to create, organize, and manage tasks efficiently. It is built with a strong focus on visual consistency, clarity, and usability.
-The interface includes three primary workflow columns—To Do, Doing, and Done—allowing users to follow a clear and structured process. The system uses lightweight JavaScript to power all interactions, including task creation, editing, deletion, and drag-and-drop movement across columns.
-Additionally, the dashboard includes static data components, such as a project timeline and informational cards, to showcase its potential as part of a larger project management application.
+---
 
+## 📘 Overview
 
-✨ Features
-🌑 Modern Dark Mode Design
-A premium dark-themed UI designed to provide a sleek, professional appearance.
-Responsive layout built with CSS Grid and Flexbox for consistent rendering across screen sizes.
-Clean typography and spacing ensure a high-quality dashboard presentation.
-🗂️ Task Management System
-Create tasks with a simple input interface.
-Assign tasks to a workflow column (To Do → Doing → Done) using a toggle button before adding.
-Edit tasks using the pencil icon for quick modifications.
-Delete tasks instantly using the trash icon.
-Tasks update dynamically without refreshing the page.
-🎯 Drag and Drop Interaction
-Tasks can be moved between workflow stages using smooth drag-and-drop functionality.
-Built entirely using the native Drag and Drop API, ensuring lightweight performance and broad browser compatibility.
-Enables intuitive workflow organization based on priority or progress.
-📊 Static Dashboard Components
-The dashboard includes a Projects Timeline with preset events for layout demonstration.
-Several information/statistic cards are displayed as placeholders for expanded features in future versions.
-These components help visualize how a complete project management dashboard would appear.
+This project delivers a complete **Kanban-style task dashboard** that enables users to create, manage, and track tasks across three workflow stages: **To Do**, **Doing**, and **Done**. Every interaction—such as adding tasks, editing content, deleting items, and reorganizing workflow using drag-and-drop—is handled seamlessly through clean, lightweight JavaScript.
 
+Beyond functional task management, the dashboard includes **static sections** like a Projects Timeline and statistic cards to illustrate how productivity tools typically organize information. These elements help visualize the potential for expansion into a larger system.
 
-📁 Project Structure
-/
-├── index.html    # Main dashboard layout and structural markup
-├── style.css     # All styling: dark theme, layout system, grid, and visual components
-└── script.js     # JavaScript logic for task creation, editing, deletion, and drag-and-drop functionality
-Each file is organized to maintain clarity and allow easy extension or modification of individual components.
+---
 
+## ✨ Features
 
-🧩 Usage Instructions
-Follow the steps below to use the dashboard effectively:
-Open index.html in any modern browser such as Chrome, Edge, or Firefox.
-Enter a task name in the input field located at the top of the task panel.
-Click the toggle button to select the workflow column for the new task
-(To Do → Doing → Done).
-Press the Add button to create and insert the task into the selected column.
-Drag existing tasks between columns to update their progress as needed.
-Additional User Actions
-Move Task: Drag the task card and drop it into another column.
-Edit Task: Select the pencil icon to update task content.
-Delete Task: Use the trash icon to remove the task permanently.
-Toggle Theme: Switch between light and dark modes using the sun/moon button.
+### 🌑 Modern Dark Mode Design
+- Professional dark theme optimized for readability and aesthetics.
+- Fully responsive layout using CSS Grid and Flexbox.
+- Clean typography and balanced spacing for a polished dashboard experience.
+- Visually consistent and structured UI ideal for demonstrating design principles.
 
+### 🗂️ Advanced Task Management System
+- Add new tasks to the workflow with a simple input and toggle button.
+- Assign tasks to a stage (To Do → Doing → Done) before insertion.
+- Edit existing tasks instantly using the pencil icon.
+- Delete tasks instantly through the trash icon.
+- All interactions update dynamically without refreshing the page.
 
+### 🎯 Native Drag-and-Drop Functionality
+- Task movement powered by the **HTML5 Drag and Drop API**.
+- Smooth reordering within or across columns.
+- Mimics the interaction style of tools like Jira or Trello.
+- No external libraries required, ensuring efficient performance.
 
-🛠️ Technologies Used
-The project is built entirely with fundamental web technologies:
-HTML5 – Semantic structure and user interface layout
-CSS3 – Styling with variables, gradients, Grid, and Flexbox
-JavaScript (ES6) – Task handling and dynamic interactions
-LocalStorage API – Intended use for saving tasks (expandable feature)
-Drag and Drop API – Enables intuitive task movement
+### 📊 Static Dashboard Components
+- Includes a preset **Projects Timeline** to show milestones or stages.
+- Contains static info/statistic cards for future metric expansions.
+- Provides a realistic dashboard feel that can be extended into a full application.
+
+---
+
+## 📂 File Sections (Detailed Explanation)
+
+Below is a breakdown of each core file and what sections they contain:
+
+---
+
+### **1. `index.html` — Main Structure File**
+
+This file defines the entire layout of the dashboard. Key sections include:
+
+#### **• Header Section**
+- Contains the theme toggle button (sun/moon icon).
+- Displays dashboard title or top-level navigation elements.
+
+#### **• Sidebar Section**
+- Includes navigation placeholders (e.g., Dashboard, Projects).
+- Designed for demonstration and future expansion.
+
+#### **• Main Content Grid**
+Divided into two major areas:
+1. **Task Management Panel**
+   - Input field
+   - Add button
+   - Column toggle feature
+2. **Kanban Columns**
+   - **To Do Column**
+   - **Doing Column**
+   - **Done Column**
+
+Each column contains a task list container where task cards dynamically appear.
+
+#### **• Static Info Sections**
+- Projects Timeline block
+- Statistic/summary cards  
+These sections simulate how additional analytical widgets could be integrated.
+
+---
+
+### **2. `style.css` — Styling and Theme File**
+
+This file contains all the visual styling for the dashboard.
+
+#### **• CSS Variables**
+- Theme colors (background, text, accent)
+- Shadows, borders, spacing presets
+
+#### **• Global Reset & Typography**
+- Universal resets for consistent styling
+- Font-family, font-size definitions
+
+#### **• Layout Styling**
+- Grid layout for main content
+- Flexbox styling for task cards and column structure
+
+#### **• Component Styling**
+- Header, sidebar, input fields, buttons
+- Kanban task cards (hover effects, spacing, icons)
+
+#### **• Dark Mode Support**
+- Theme classes applied when toggled
+- Smooth transitions for background and text colors
+
+---
+
+### **3. `script.js` — Logic and Functionality File**
+
+Contains all JavaScript logic, organized into clear sections:
+
+#### **• Element Selection**
+- Fetches all DOM elements (input field, buttons, columns)
+
+#### **• Task Creation Logic**
+- Function to generate new task cards dynamically
+- Inserts tasks into selected column
+
+#### **• Edit & Delete Functionality**
+- Inline editing with prompt or text update
+- Permanent deletion through DOM removal
+
+#### **• Drag and Drop Handlers**
+- `dragstart` → identifies dragged element  
+- `dragover` → allows dropping into columns  
+- `drop` → moves the task card into the new target column  
+
+#### **• Utility Functions**
+- Column cycling logic (To Do → Doing → Done)
+- Optional hooks for LocalStorage expansion
+
+---
+
+## 📁 Project Structure
+
