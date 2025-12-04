@@ -161,8 +161,114 @@ function showTasksOnScreen() {
   document.getElementById("doing").innerHTML = "";
   document.getElementById("done").innerHTML = "";
 
-  // Loop through every task and put it in the right place
-  listOfTasks.forEach(function (task) {
+  // Separate tasks by column
+  const todoTasks = listOfTasks.filter((t) => t.column === "todo");
+  const otherTasks = listOfTasks.filter((t) => t.column !== "todo");
+
+  // --- Render To Do Column (Grouped by Day, Sorted by Priority) ---
+
+  // Helper to get date string (YYYY-MM-DD) for grouping
+  const getDateKey = (dateStr) => new Date(dateStr).toDateString();
+
+  // Helper to get priority weight (High > Medium > Low)
+  const getPriorityWeight = (p) => {
+    if (p === "high") return 3;
+    if (p === "medium") return 2;
+    return 1;
+  };
+
+  // Sort To Do tasks: Date ASC, then Priority DESC
+  todoTasks.sort((a, b) => {
+    const dateA = new Date(a.dueDate);
+    const dateB = new Date(b.dueDate);
+    if (getDateKey(a.dueDate) !== getDateKey(b.dueDate)) {
+      return dateA - dateB;
+    }
+    return getPriorityWeight(b.priority) - getPriorityWeight(a.priority);
+  });
+
+  // Group by Date
+  const groupedTasks = {};
+  todoTasks.forEach((task) => {
+    const key = getDateKey(task.dueDate);
+    if (!groupedTasks[key]) groupedTasks[key] = [];
+    groupedTasks[key].push(task);
+  });
+
+  const todoContainer = document.getElementById("todo");
+
+  Object.keys(groupedTasks).forEach((dateKey) => {
+    // Determine friendly header text
+    const today = new Date().toDateString();
+    const tomorrow = new Date();
+    tomorrow.setDate(new Date().getDate() + 1);
+    const tomorrowStr = tomorrow.toDateString();
+
+    let dateLabel = dateKey;
+    if (dateKey === today) dateLabel = "Today";
+    else if (dateKey === tomorrowStr) dateLabel = "Tomorrow";
+    else {
+      // Use first task's date to format nicely
+      const d = new Date(groupedTasks[dateKey][0].dueDate);
+      dateLabel = d.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+    }
+
+    // Create Header Container
+    const header = document.createElement("div");
+    header.className = "date-header";
+    header.style.cursor = "pointer";
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.gap = "6px";
+    header.style.color = "#888";
+    header.style.fontSize = "0.8rem";
+    header.style.fontWeight = "600";
+    header.style.marginTop = "12px";
+    header.style.marginBottom = "8px";
+    header.style.textTransform = "uppercase";
+    header.style.letterSpacing = "0.5px";
+    header.style.userSelect = "none"; // Prevent text selection on quick clicks
+
+    // Arrow Icon
+    const arrow = document.createElement("span");
+    arrow.textContent = "▼";
+    arrow.style.fontSize = "0.7rem";
+    arrow.style.transition = "transform 0.2s";
+
+    // Label
+    const label = document.createElement("span");
+    label.textContent = dateLabel;
+
+    header.appendChild(arrow);
+    header.appendChild(label);
+
+    // Create Task Group Container
+    const groupContainer = document.createElement("div");
+    groupContainer.style.display = "block"; // Default expanded
+
+    // Add Tasks to Group
+    groupedTasks[dateKey].forEach((task) => {
+      const card = createCard(task);
+      groupContainer.appendChild(card);
+    });
+
+    // Toggle Logic
+    header.onclick = () => {
+      const isHidden = groupContainer.style.display === "none";
+      groupContainer.style.display = isHidden ? "block" : "none";
+      arrow.textContent = isHidden ? "▼" : "▶";
+    };
+
+    todoContainer.appendChild(header);
+    todoContainer.appendChild(groupContainer);
+  });
+
+  // --- Render Other Columns (Normal) ---
+  otherTasks.forEach(function (task) {
     const card = createCard(task);
     const column = document.getElementById(task.column);
     if (column) {
