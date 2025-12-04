@@ -42,6 +42,10 @@ Beyond functional task management, the dashboard includes **static sections** li
 
 ## 📂 File Sections (Detailed Explanation)
 
+├── index.html
+├── style.css
+└── script.js
+
 Below is a breakdown of each core file and what sections they contain:
 
 ---
