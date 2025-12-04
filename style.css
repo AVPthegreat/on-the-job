@@ -171,6 +171,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    /* width: 620px; */
 }
 
 .page-title {
@@ -178,6 +179,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
+
 }
 
 .input-capsule {
@@ -187,6 +189,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* width: 780px; */
 }
 
 .input-wrapper {
@@ -200,6 +203,7 @@ body {
     color: var(--text-white);
     font-size: 1.1rem;
     width: 100%;
+    /* width: 20px; */
     outline: none;
     font-family: var(--font-family);
 }
@@ -502,26 +506,63 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 .capsule {
     position: absolute;
-    height: 30px; /* Slightly smaller for dynamic */
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: #000;
-    font-weight: 600;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     z-index: 10;
+    transition: transform 0.2s ease;
+}
+
+.capsule:hover {
+    transform: scale(1.2);
+    z-index: 20;
+}
+
+/* Tooltip Styling */
+.capsule .tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 120%; /* Show above the dot */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 30;
+    min-width: 150px;
+}
+
+.capsule:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.capsule .tooltip-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+    display: block;
+    color: var(--accent-white);
+}
+
+.capsule .tooltip-info {
+    display: block;
+    color: var(--text-gray);
+    font-size: 0.75rem;
 }
 
 .capsule.green { background-color: var(--accent-green); }
 .capsule.orange { background-color: var(--accent-orange); }
 .capsule.white { background-color: var(--accent-white); }
-.capsule.red { background-color: #ef4444; color: white; }
+.capsule.red { background-color: #ef4444; }
 
 .x-axis {
     display: flex;

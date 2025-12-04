@@ -1,326 +1,402 @@
-// State
-let tasks = [
-    { id: 't1', title: 'Design System', column: 'todo', priority: 'high', dueDate: new Date(Date.now() + 86400000).toISOString() },
-    { id: 't2', title: 'API Integration', column: 'doing', priority: 'medium', dueDate: new Date(Date.now() + 172800000).toISOString() },
-    { id: 't3', title: 'User Testing', column: 'done', priority: 'low', dueDate: new Date(Date.now() - 86400000).toISOString() }
+// This list keeps track of all our tasks
+let listOfTasks = [
+  {
+    id: "task-1",
+    title: "Design System",
+    column: "todo",
+    priority: "high",
+    dueDate: new Date(Date.now() + 86400000).toISOString(),
+  },
+  {
+    id: "task-2",
+    title: "API Integration",
+    column: "doing",
+    priority: "medium",
+    dueDate: new Date(Date.now() + 172800000).toISOString(),
+  },
+  {
+    id: "task-3",
+    title: "User Testing",
+    column: "done",
+    priority: "low",
+    dueDate: new Date(Date.now() - 86400000).toISOString(),
+  },
 ];
 
-// DOM Elements
-const txt = document.getElementById('txt');
-const addBtn = document.getElementById('add');
-const colBtn = document.getElementById('col-btn');
-const colText = document.getElementById('col-text');
-const priorityBtn = document.getElementById('priority-btn');
-const priorityText = document.getElementById('priority-text');
-const dateInput = document.getElementById('date-input');
+// Getting elements from the HTML
+const taskInput = document.getElementById("txt");
+const addButton = document.getElementById("add");
+const priorityButton = document.getElementById("priority-btn");
+const priorityText = document.getElementById("priority-text");
+const datePicker = document.getElementById("date-input");
 
-// Constants
-const columns = ['todo', 'doing', 'done'];
-const columnLabels = {'todo': 'To Do', 'doing': 'Doing', 'done': 'Done'};
-const priorities = ['low', 'medium', 'high'];
-const priorityLabels = {'low': 'Priority: Low', 'medium': 'Priority: Medium', 'high': 'Priority: High'};
-
-// Initialization
-document.addEventListener('DOMContentLoaded', () => {
-    // Set default date to tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
-    dateInput.value = tomorrow.toISOString().slice(0, 16);
-
-    loadTasks(); // Load from LocalStorage
-    renderTasks();
-    renderTimeline();
-});
-
-// --- Event Listeners ---
-
-// Column Selector
-colBtn.onclick = () => {
-    const currentVal = colBtn.dataset.value;
-    const nextIndex = (columns.indexOf(currentVal) + 1) % columns.length;
-    const newVal = columns[nextIndex];
-    colBtn.dataset.value = newVal;
-    colText.textContent = columnLabels[newVal];
+// Simple lists for our options
+const priorityOptions = ["low", "medium", "high"];
+const priorityNames = {
+  low: "Priority: Low",
+  medium: "Priority: Medium",
+  high: "Priority: High",
 };
 
-// Priority Selector
-priorityBtn.onclick = () => {
-    const currentVal = priorityBtn.dataset.value;
-    const nextIndex = (priorities.indexOf(currentVal) + 1) % priorities.length;
-    const newVal = priorities[nextIndex];
-    priorityBtn.dataset.value = newVal;
-    priorityText.textContent = priorityLabels[newVal];
-};
+// When the page loads, do this
+document.addEventListener("DOMContentLoaded", function () {
+  // Set the date picker to tomorrow by default
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Fix timezone issue
+  tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+  datePicker.value = tomorrow.toISOString().slice(0, 16);
 
-// Add Task (Click)
-addBtn.onclick = addTask;
-
-// Add Task (Enter)
-txt.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') addTask();
+  loadTasksFromComputer(); // Get saved tasks
+  showTasksOnScreen(); // Show them
+  drawTimeline(); // Draw the timeline
 });
 
-// --- Persistence ---
+// --- Button Clicks ---
 
-function saveTasks() {
-    localStorage.setItem('kanban_tasks', JSON.stringify(tasks));
+// Change priority when button is clicked
+priorityButton.onclick = function () {
+  const currentValue = priorityButton.dataset.value;
+  // Find the next priority in the list
+  let nextIndex = priorityOptions.indexOf(currentValue) + 1;
+  if (nextIndex >= priorityOptions.length) {
+    nextIndex = 0; // Go back to start
+  }
+  const newValue = priorityOptions[nextIndex];
+
+  // Update the button
+  priorityButton.dataset.value = newValue;
+  priorityText.textContent = priorityNames[newValue];
+};
+
+// Add task when button is clicked
+addButton.onclick = addNewTask;
+
+// Add task when Enter key is pressed
+taskInput.addEventListener("keypress", function (event) {
+  if (event.key === "Enter") {
+    addNewTask();
+  }
+});
+
+// --- Saving and Loading ---
+
+function saveTasksToComputer() {
+  // Save our list to the browser's local storage
+  const textVersion = JSON.stringify(listOfTasks);
+  localStorage.setItem("kanban_tasks", textVersion);
 }
 
-function loadTasks() {
-    const stored = localStorage.getItem('kanban_tasks');
-    if (stored) {
-        tasks = JSON.parse(stored);
-    }
+function loadTasksFromComputer() {
+  // Get the list back from storage
+  const storedTasks = localStorage.getItem("kanban_tasks");
+  if (storedTasks) {
+    listOfTasks = JSON.parse(storedTasks);
+  }
 }
 
-// --- Core Logic ---
+// --- Main Functions ---
 
-function addTask() {
-    const title = txt.value.trim();
-    if (!title) return;
+function addNewTask() {
+  const title = taskInput.value.trim();
 
-    const newTask = {
-        id: 'c_' + Math.random().toString(36).slice(2, 9),
-        title: title,
-        column: colBtn.dataset.value,
-        priority: priorityBtn.dataset.value,
-        dueDate: dateInput.value || new Date().toISOString()
-    };
+  // If the box is empty, don't do anything
+  if (title === "") {
+    return;
+  }
 
-    tasks.push(newTask);
-    saveTasks(); // Save
-    renderTasks();
-    renderTimeline();
-    txt.value = '';
+  // Create a new task object
+  const newTask = {
+    id: "task-" + Date.now(), // Unique ID using time
+    title: title,
+    column: "todo", // Always start in To Do
+    priority: priorityButton.dataset.value,
+    dueDate: datePicker.value || new Date().toISOString(),
+  };
+
+  // Add to our list
+  listOfTasks.push(newTask);
+
+  saveTasksToComputer();
+  showTasksOnScreen();
+  drawTimeline();
+
+  // Clear the input box
+  taskInput.value = "";
 }
 
-function deleteTask(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    saveTasks(); // Save
-    renderTasks();
-    renderTimeline();
+function removeTask(id) {
+  // Keep only tasks that don't match this ID
+  listOfTasks = listOfTasks.filter(function (task) {
+    return task.id !== id;
+  });
+
+  saveTasksToComputer();
+  showTasksOnScreen();
+  drawTimeline();
 }
 
-function renderTasks() {
-    // Clear columns
-    document.getElementById('todo').innerHTML = '';
-    document.getElementById('doing').innerHTML = '';
-    document.getElementById('done').innerHTML = '';
+function editTaskTitle(id) {
+  // Find the task with this ID
+  const task = listOfTasks.find(function (t) {
+    return t.id === id;
+  });
 
-    tasks.forEach(task => {
-        const card = createCardElement(task);
-        const container = document.getElementById(task.column);
-        if (container) container.appendChild(card);
-    });
-}
+  if (!task) return;
 
-function editTask(id) {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-    
-    const newTitle = prompt('Edit task title:', task.title);
-    if (!newTitle) return;
-    
+  // Ask user for new title
+  const newTitle = prompt("Edit task title:", task.title);
+
+  if (newTitle) {
     task.title = newTitle.trim();
-    saveTasks(); // Save changes
-    renderTasks();
-    renderTimeline();
+    saveTasksToComputer();
+    showTasksOnScreen();
+    drawTimeline();
+  }
 }
 
-function createCardElement(task) {
-    const el = document.createElement('div');
-    el.className = `dashboard-task-card priority-${task.priority}`;
-    el.draggable = true;
-    el.id = task.id;
-    
-    // Drag Events
-    el.ondragstart = ev => {
-        ev.dataTransfer.setData('text/plain', task.id);
-        ev.dataTransfer.effectAllowed = 'move';
-    };
+function showTasksOnScreen() {
+  // Clear all columns first
+  document.getElementById("todo").innerHTML = "";
+  document.getElementById("doing").innerHTML = "";
+  document.getElementById("done").innerHTML = "";
 
-    // Content
-    const content = document.createElement('div');
-    content.style.display = 'flex';
-    content.style.justifyContent = 'space-between';
-    content.style.alignItems = 'center';
-
-    const text = document.createElement('span');
-    text.textContent = task.title;
-    text.style.color = '#fff';
-    text.style.fontWeight = '500';
-
-    const meta = document.createElement('div');
-    meta.style.display = 'flex';
-    meta.style.alignItems = 'center';
-    meta.style.gap = '8px';
-
-    // Due Date Badge
-    const date = new Date(task.dueDate);
-    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const dateBadge = document.createElement('span');
-    dateBadge.textContent = dateStr;
-    dateBadge.style.fontSize = '0.7rem';
-    dateBadge.style.color = '#888';
-    dateBadge.style.backgroundColor = '#222';
-    dateBadge.style.padding = '2px 6px';
-    dateBadge.style.borderRadius = '4px';
-
-    // Edit Button
-    const editBtn = document.createElement('button');
-    editBtn.innerHTML = '✎';
-    editBtn.onclick = (e) => {
-        e.stopPropagation();
-        editTask(task.id);
-    };
-    editBtn.style.background = 'none';
-    editBtn.style.border = 'none';
-    editBtn.style.color = '#666';
-    editBtn.style.fontSize = '1.2rem';
-    editBtn.style.cursor = 'pointer';
-    editBtn.onmouseover = () => editBtn.style.color = '#fff';
-    editBtn.onmouseout = () => editBtn.style.color = '#666';
-
-    // Delete Button
-    const delBtn = document.createElement('button');
-    delBtn.innerHTML = '&times;';
-    delBtn.onclick = (e) => {
-        e.stopPropagation();
-        deleteTask(task.id);
-    };
-    delBtn.style.background = 'none';
-    delBtn.style.border = 'none';
-    delBtn.style.color = '#666';
-    delBtn.style.fontSize = '1.2rem';
-    delBtn.style.cursor = 'pointer';
-    delBtn.onmouseover = () => delBtn.style.color = '#ef4444';
-    delBtn.onmouseout = () => delBtn.style.color = '#666';
-
-    meta.appendChild(dateBadge);
-    meta.appendChild(editBtn);
-    meta.appendChild(delBtn);
-
-    content.appendChild(text);
-    content.appendChild(meta);
-    el.appendChild(content);
-
-    return el;
+  // Loop through every task and put it in the right place
+  listOfTasks.forEach(function (task) {
+    const card = createCard(task);
+    const column = document.getElementById(task.column);
+    if (column) {
+      column.appendChild(card);
+    }
+  });
 }
 
-// --- Drag & Drop Global Handlers ---
-window.drop = function(ev) {
-    ev.preventDefault();
-    const id = ev.dataTransfer.getData('text/plain');
-    const task = tasks.find(t => t.id === id);
-    
-    // Identify target column
-    let target = ev.target;
-    while (target && !target.classList.contains('task-container')) {
-        target = target.parentElement;
-    }
+function createCard(task) {
+  const card = document.createElement("div");
+  // Add classes for styling
+  card.className = "dashboard-task-card priority-" + task.priority;
+  card.draggable = true;
+  card.id = task.id;
 
-    if (task && target) {
-        task.column = target.id;
-        saveTasks(); // Save
-        renderTasks();
-        renderTimeline(); // Update timeline colors if status changed
-    }
+  // Handle dragging
+  card.ondragstart = function (event) {
+    event.dataTransfer.setData("text/plain", task.id);
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  // Create the content inside the card
+  const content = document.createElement("div");
+  content.style.display = "flex";
+  content.style.justifyContent = "space-between";
+  content.style.alignItems = "center";
+
+  // Task Title
+  const titleText = document.createElement("span");
+  titleText.textContent = task.title;
+  titleText.style.color = "#fff";
+  titleText.style.fontWeight = "500";
+
+  // Right side (Date, Edit, Delete)
+  const rightSide = document.createElement("div");
+  rightSide.style.display = "flex";
+  rightSide.style.alignItems = "center";
+  rightSide.style.gap = "8px";
+
+  // Date Badge
+  const dateObj = new Date(task.dueDate);
+  const dateString = dateObj.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const dateBadge = document.createElement("span");
+  dateBadge.textContent = dateString;
+  dateBadge.style.fontSize = "0.7rem";
+  dateBadge.style.color = "#888";
+  dateBadge.style.backgroundColor = "#222";
+  dateBadge.style.padding = "2px 6px";
+  dateBadge.style.borderRadius = "4px";
+
+  // Edit Button (Pencil)
+  const editButton = document.createElement("button");
+  editButton.innerHTML = "✎";
+  editButton.onclick = function (event) {
+    event.stopPropagation(); // Don't trigger drag
+    editTaskTitle(task.id);
+  };
+  // Basic styling for button
+  editButton.style.background = "none";
+  editButton.style.border = "none";
+  editButton.style.color = "#666";
+  editButton.style.fontSize = "1.2rem";
+  editButton.style.cursor = "pointer";
+
+  // Delete Button (X)
+  const deleteButton = document.createElement("button");
+  deleteButton.innerHTML = "&times;";
+  deleteButton.onclick = function (event) {
+    event.stopPropagation();
+    removeTask(task.id);
+  };
+  deleteButton.style.background = "none";
+  deleteButton.style.border = "none";
+  deleteButton.style.color = "#666";
+  deleteButton.style.fontSize = "1.2rem";
+  deleteButton.style.cursor = "pointer";
+
+  // Put everything together
+  rightSide.appendChild(dateBadge);
+  rightSide.appendChild(editButton);
+  rightSide.appendChild(deleteButton);
+
+  content.appendChild(titleText);
+  content.appendChild(rightSide);
+  card.appendChild(content);
+
+  return card;
+}
+
+// --- Drag and Drop ---
+
+// This function runs when you drop a task
+window.drop = function (event) {
+  event.preventDefault();
+  const id = event.dataTransfer.getData("text/plain");
+
+  // Find the task we dropped
+  const task = listOfTasks.find(function (t) {
+    return t.id === id;
+  });
+
+  // Find where we dropped it
+  let target = event.target;
+  while (target && !target.classList.contains("task-container")) {
+    target = target.parentElement;
+  }
+
+  if (task && target) {
+    // Update the task's column
+    task.column = target.id;
+
+    saveTasksToComputer();
+    showTasksOnScreen();
+    drawTimeline();
+  }
 };
 
-// --- Timeline Logic ---
+// --- Timeline ---
 
-function renderTimeline() {
-    const chart = document.getElementById('timeline-chart');
-    const xAxis = document.getElementById('timeline-x-axis');
-    if (!chart || !xAxis) return;
+function drawTimeline() {
+  const chart = document.getElementById("timeline-chart");
+  const xAxis = document.getElementById("timeline-x-axis");
 
-    chart.innerHTML = '';
-    xAxis.innerHTML = '';
+  if (!chart || !xAxis) return;
 
-    // 1. Setup Y-Axis (Next 7 Days)
-    const today = new Date();
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        dates.push(d);
+  // Clear old stuff
+  chart.innerHTML = "";
+  xAxis.innerHTML = "";
+
+  // 1. Make the Y-Axis (Dates)
+  const today = new Date();
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    dates.push(d);
+  }
+
+  const yAxis = document.createElement("div");
+  yAxis.className = "y-axis";
+  dates.forEach(function (d) {
+    const span = document.createElement("span");
+    span.textContent = d.toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+    });
+    yAxis.appendChild(span);
+  });
+  chart.appendChild(yAxis);
+
+  // 2. Make the Grid and Capsules
+  const grid = document.createElement("div");
+  grid.className = "timeline-grid";
+
+  // Draw lines for each day
+  dates.forEach(function () {
+    const line = document.createElement("div");
+    line.className = "grid-line";
+    grid.appendChild(line);
+  });
+
+  // Put tasks on the timeline
+  listOfTasks.forEach(function (task) {
+    // Don't show 'done' tasks
+    if (task.column === "done") return;
+
+    const dueDate = new Date(task.dueDate);
+
+    // Find which row (date) this task goes in
+    const rowIndex = dates.findIndex(function (d) {
+      return (
+        d.getDate() === dueDate.getDate() && d.getMonth() === dueDate.getMonth()
+      );
+    });
+
+    if (rowIndex !== -1) {
+      // Figure out left position (Time)
+      const hours = dueDate.getHours() + dueDate.getMinutes() / 60;
+      const leftPercent = (hours / 24) * 100;
+
+      // Figure out top position (Date)
+      const rowHeight = 100 / 7;
+      const topPercent = rowIndex * rowHeight + rowHeight / 2;
+      const capsule = document.createElement("div");
+      capsule.className = "capsule " + getTaskColor(task);
+      capsule.style.left = leftPercent + "%";
+      capsule.style.top = topPercent + "%";
+
+      // Make capsule draggable
+      capsule.draggable = true;
+      capsule.ondragstart = function (event) {
+        event.dataTransfer.setData("text/plain", task.id);
+        event.dataTransfer.effectAllowed = "move";
+      };
+
+      // Width is now handled by CSS (circle)
+
+      // Calculate time left
+      const diffMs = dueDate - new Date();
+      const diffHrs = Math.round(diffMs / (1000 * 60 * 60));
+      let timeText = "Overdue";
+      if (diffHrs > 0) {
+        timeText = diffHrs + "h left";
+      }
+
+      // Add Tooltip Content
+      capsule.innerHTML = `
+          <div class="tooltip">
+              <span class="tooltip-title">${task.title}</span>
+              <span class="tooltip-info">Time: ${timeText}</span>
+              <span class="tooltip-info">Priority: ${task.priority}</span>
+          </div>
+      `;
+
+      grid.appendChild(capsule);
     }
+  });
 
-    const yAxis = document.createElement('div');
-    yAxis.className = 'y-axis';
-    dates.forEach(d => {
-        const span = document.createElement('span');
-        span.textContent = d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' });
-        yAxis.appendChild(span);
-    });
-    chart.appendChild(yAxis);
+  chart.appendChild(grid);
 
-    // 2. Setup Grid & Capsules
-    const grid = document.createElement('div');
-    grid.className = 'timeline-grid';
-    
-    // Grid Lines
-    dates.forEach(() => {
-        const line = document.createElement('div');
-        line.className = 'grid-line';
-        grid.appendChild(line);
-    });
-
-    // Plot Tasks
-    tasks.forEach(task => {
-        if (task.column === 'done') return; // Optional: Hide done tasks from timeline
-
-        const dueDate = new Date(task.dueDate);
-        
-        // Find which row (date) this task belongs to
-        const rowIndex = dates.findIndex(d => 
-            d.getDate() === dueDate.getDate() && 
-            d.getMonth() === dueDate.getMonth()
-        );
-
-        if (rowIndex !== -1) {
-            // Calculate X position based on time (0-24h)
-            const hours = dueDate.getHours() + (dueDate.getMinutes() / 60);
-            const leftPercent = (hours / 24) * 100;
-            
-            // Calculate Top position based on row index
-            // Assuming 7 rows, each is ~14.28% height
-            const rowHeight = 100 / 7;
-            const topPercent = (rowIndex * rowHeight) + (rowHeight / 2) - 2; // Center in row
-
-            const capsule = document.createElement('div');
-            capsule.className = `capsule ${getTaskColor(task)}`;
-            capsule.style.left = `${leftPercent}%`;
-            capsule.style.top = `${topPercent}%`;
-            capsule.style.width = '200px'; // Fixed width for readability
-
-            // Remaining Time Calculation
-            const diffMs = dueDate - new Date();
-            const diffHrs = Math.round(diffMs / (1000 * 60 * 60));
-            const timeText = diffHrs > 0 ? `${diffHrs}h left` : 'Overdue';
-
-            capsule.innerHTML = `
-                <span style="margin-right:4px">${task.title}</span>
-                <span style="font-size:0.7em; opacity:0.8">${timeText}</span>
-            `;
-
-            grid.appendChild(capsule);
-        }
-    });
-
-    chart.appendChild(grid);
-
-    // 3. Setup X-Axis (Time)
-    ['00:00', '06:00', '12:00', '18:00', '23:59'].forEach(time => {
-        const span = document.createElement('span');
-        span.textContent = time;
-        xAxis.appendChild(span);
-    });
+  // 3. Make the X-Axis (Time)
+  const times = ["00:00", "06:00", "12:00", "18:00", "23:59"];
+  times.forEach(function (time) {
+    const span = document.createElement("span");
+    span.textContent = time;
+    xAxis.appendChild(span);
+  });
 }
 
 function getTaskColor(task) {
-    if (task.column === 'todo') return 'orange';
-    if (task.column === 'doing') return 'green';
-    return 'white';
+  if (task.column === "todo") return "orange";
+  if (task.column === "doing") return "green";
+  return "white";
 }
